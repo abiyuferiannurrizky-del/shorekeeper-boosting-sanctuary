@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { activeQueue, nextQueueNumber } from "@/lib/queue/logic";
 import { parseCsv, validateImport } from "@/lib/queue/csv";
-import { SAMPLE_QUEUE } from "@/lib/queue/sample-data";
+import type { QueueEntry } from "@/lib/queue/types";
+
+const mk = (n: number, status: QueueEntry["status"]): QueueEntry => ({
+  id: String(n), queue_number: n, customer_name: "C" + n, discord_username: "u" + n, discord_id: "",
+  game: "ML", service: "Rank", notes: "", status, created_at: "2026-01-01T00:00:00Z", completed_at: null,
+});
+const SAMPLE_QUEUE = [mk(1, "done"), mk(2, "waiting"), mk(3, "processing"), mk(10, "waiting")];
 
 describe("queue rules", () => {
   it("hides completed orders and puts processing first", () => {

@@ -1,6 +1,8 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { FileSpreadsheet, History, LayoutDashboard, ListOrdered, Settings, ShieldAlert } from "lucide-react";
+import { FileSpreadsheet, History, LayoutDashboard, ListOrdered, LogOut, Settings } from "lucide-react";
 import { Logo } from "@/components/brand/Butterfly";
+import { AdminGate } from "@/components/admin/AdminGate";
+import { Button } from "@/components/ui/button";
 import { HistorySection, ImportExportSection, OverviewSection, QueueSection, SettingsSection } from "@/components/admin/sections";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu,
@@ -30,6 +32,8 @@ function AdminPage() {
   const current = SECTIONS[section];
   const Body = current.el;
   return (
+    <AdminGate>
+      {(signOut, email) => (
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <Sidebar collapsible="icon">
@@ -57,14 +61,14 @@ function AdminPage() {
           <header className="flex h-14 items-center gap-3 border-b border-border px-4">
             <SidebarTrigger />
             <h1 className="font-display text-2xl text-silver">{current.label}</h1>
+            <span className="ml-auto hidden truncate text-xs text-muted-foreground sm:block">{email}</span>
+            <Button variant="ghost" size="sm" className="sm:ml-0 ml-auto" onClick={signOut}><LogOut className="h-4 w-4" /> Sign out</Button>
           </header>
-          <div className="flex items-start gap-2 border-b border-border bg-secondary/40 px-4 py-2 text-xs text-muted-foreground">
-            <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-            Prototype mode: changes stay in this browser and admin sign-in is not active yet. Both arrive when the database is connected.
-          </div>
           <main className="flex-1 p-4 md:p-8"><Body /></main>
         </div>
       </div>
     </SidebarProvider>
+      )}
+    </AdminGate>
   );
 }

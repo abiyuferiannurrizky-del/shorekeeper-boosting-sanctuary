@@ -9,7 +9,7 @@ import type { NewQueueEntry } from "@/lib/queue/types";
 const EMPTY: NewQueueEntry = { customer_name: "", discord_username: "", discord_id: "", game: "Mobile Legends", service: "", notes: "" };
 
 export function QueueFormDialog({ open, onOpenChange, initial, onSubmit, title }: {
-  open: boolean; onOpenChange: (o: boolean) => void; initial?: NewQueueEntry; title: string; onSubmit: (v: NewQueueEntry) => void;
+  open: boolean; onOpenChange: (o: boolean) => void; initial?: NewQueueEntry; title: string; onSubmit: (v: NewQueueEntry) => void | Promise<void>;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -21,7 +21,8 @@ export function QueueFormDialog({ open, onOpenChange, initial, onSubmit, title }
   );
 }
 
-function FormBody({ initial, onSubmit }: { initial: NewQueueEntry; onSubmit: (v: NewQueueEntry) => void }) {
+function FormBody({ initial, onSubmit }: { initial: NewQueueEntry; onSubmit: (v: NewQueueEntry) => void | Promise<void> }) {
+  const [busy, setBusy] = useState(false);
   const [v, setV] = useState(initial);
   const [err, setErr] = useState<string | null>(null);
   const set = (k: keyof NewQueueEntry) => (e: { target: { value: string } }) => setV({ ...v, [k]: e.target.value });
@@ -29,7 +30,8 @@ function FormBody({ initial, onSubmit }: { initial: NewQueueEntry; onSubmit: (v:
     e.preventDefault();
     if (!v.customer_name.trim() || !v.discord_username.trim() || !v.game.trim() || !v.service.trim()) return setErr("Fill in name, Discord username, game and service.");
     if (v.discord_id && !/^\d{17,20}$/.test(v.discord_id.trim())) return setErr("Discord User ID must be 17–20 digits.");
-    onSubmit({ ...v, discord_username: v.discord_username.replace(/^@/, "").trim(), discord_id: v.discord_id.trim() });
+    setBusy(true);
+    void Promise.resolve(onSubmit({ ...v, discord_username: v.discord_username.replace(/^@/, "").trim(), discord_id: v.discord_id.trim() })).finally(() => setBusy(false));
   };
   const field = (k: keyof NewQueueEntry, label: string, ph = "") => (
     <div className="space-y-1.5">
@@ -51,7 +53,7 @@ function FormBody({ initial, onSubmit }: { initial: NewQueueEntry; onSubmit: (v:
         <Textarea id="notes" value={v.notes} onChange={set("notes")} rows={3} />
       </div>
       {err && <p className="text-sm text-destructive">{err}</p>}
-      <Button type="submit" className="w-full">Save</Button>
+      <Button type="submit" className="w-full" disabled={busy}>{busy ? "Saving…" : "Save"}</Button>
     </form>
   );
 }

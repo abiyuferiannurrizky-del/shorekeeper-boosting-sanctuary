@@ -9,6 +9,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { parseCsv, toCsv, validateImport, type ImportRow } from "@/lib/queue/csv";
 import { completedOrders, queueStats } from "@/lib/queue/logic";
 import { queueActions, useQueue } from "@/lib/queue/store";
+import { useQueryClient } from "@tanstack/react-query";
+
+function useRun() {
+  const qc = useQueryClient();
+  return async (fn: () => Promise<unknown>, ok: string) => {
+    try {
+      await fn();
+      toast.success(ok);
+      void qc.invalidateQueries({ queryKey: ["queue"] });
+      return true;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Something went wrong");
+      return false;
+    }
+  };
+}
 import type { QueueEntry, QueueStatus } from "@/lib/queue/types";
 import { Confirm } from "./ConfirmButton";
 import { QueueFormDialog } from "./QueueForm";
@@ -16,7 +32,7 @@ import { QueueFormDialog } from "./QueueForm";
 const num = (n: number) => `#${String(n).padStart(3, "0")}`;
 
 export function OverviewSection() {
-  const entries = useQueue();
+  const entries = useQueue("admin");
   const s = queueStats(entries);
   const recent = [...entries].sort((a, b) => (b.completed_at ?? b.created_at).localeCompare(a.completed_at ?? a.created_at)).slice(0, 6);
   return (
@@ -43,12 +59,13 @@ export function OverviewSection() {
 }
 
 export function QueueSection() {
-  const entries = useQueue();
+  const entries = useQueue("admin");
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | QueueStatus>("all");
   const [asc, setAsc] = useState(true);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<QueueEntry | null>(null);
+  const run = useRun();
 
   const rows = useMemo(
     () => entries
@@ -95,10 +112,10 @@ export function QueueSection() {
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-1">
                     {e.status === "waiting" && (
-                      <Button size="sm" variant="ghost" title="Mark as processing" onClick={() => { queueActions.setStatus(e.id, "processing"); toast.success(`${num(e.queue_number)} is now processing`); }}><Play className="h-4 w-4" /></Button>
+                      <Button size="sm" variant="ghost" title="Mark as processing" onClick={() => void run(() => queueActions.setStatus(e.id, "processing"), `${num(e.queue_number)} is now processing`)}><Play className="h-4 w-4" /></Button>
                     )}
                     {e.status !== "done" && (
-                      <Button size="sm" variant="ghost" title="Mark as completed" onClick={() => { queueActions.setStatus(e.id, "done"); toast.success(`${num(e.queue_number)} completed`); }}><CheckCircle2 className="h-4 w-4" /></Button>
+                      <Button size="sm" variant="ghost" title="Mark as completed" onClick={() => void run(() => queueActions.setStatus(e.id, "done"), `${num(e.queue_number)} completed`)}><CheckCircle2 className="h-4 w-4" /></Button>
                     )}
                     <Button size="sm" variant="ghost" title="Edit" onClick={() => setEditing(e)}><Pencil className="h-4 w-4" /></Button>
                     <Confirm
@@ -106,7 +123,7 @@ export function QueueSection() {
                       title={`Remove ${num(e.queue_number)}?`}
                       description={`${e.customer_name}'s order will be permanently removed.`}
                       action="Remove"
-                      onConfirm={() => { queueActions.remove(e.id); toast.success("Order removed"); }}
+                      onConfirm={() => void run(() => queueActions.remove(e.id), "Order removed")}
                     />
                   </div>
                 </td>
@@ -117,15 +134,16 @@ export function QueueSection() {
       </div>
 
       <QueueFormDialog open={adding} onOpenChange={setAdding} title="Add queue"
-        onSubmit={(v) => { const e = queueActions.add(v); setAdding(false); toast.success(`Added ${num(e.queue_number)}`); }} />
+        onSubmit={async (v) => { if (await run(() => queueActions.add(v), "Order added")) setAdding(false); }} />
       <QueueFormDialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)} title="Edit queue" {...(editing ? { initial: editing } : {})}
-        onSubmit={(v) => { if (editing) queueActions.update(editing.id, v); setEditing(null); toast.success("Order updated"); }} />
+        onSubmit={async (v) => { if (editing && (await run(() => queueActions.update(editing.id, v), "Order updated"))) setEditing(null); }} />
     </div>
   );
 }
 
 export function HistorySection() {
-  const done = completedOrders(useQueue());
+  const done = completedOrders(useQueue("admin"));
+  const run = useRun();
   return (
     <div className="glass overflow-x-auto rounded-md">
       <table className="w-full min-w-[640px] text-sm">
@@ -140,7 +158,7 @@ export function HistorySection() {
               <td className="px-4 py-3">{e.customer_name}<div className="text-xs text-muted-foreground">@{e.discord_username}</div></td>
               <td className="px-4 py-3">{e.service}</td>
               <td className="px-4 py-3 text-muted-foreground">{e.completed_at ? new Date(e.completed_at).toLocaleString() : "—"}</td>
-              <td className="px-4 py-3 text-right"><Button size="sm" variant="ghost" onClick={() => queueActions.setStatus(e.id, "waiting")}>Reopen</Button></td>
+              <td className="px-4 py-3 text-right"><Button size="sm" variant="ghost" onClick={() => void run(() => queueActions.setStatus(e.id, "waiting"), "Order reopened")}>Reopen</Button></td>
             </tr>
           ))}
         </tbody>
@@ -157,9 +175,10 @@ function download(name: string, text: string) {
 }
 
 export function ImportExportSection() {
-  const entries = useQueue();
+  const entries = useQueue("admin");
   const [rows, setRows] = useState<ImportRow[] | null>(null);
   const [fileErr, setFileErr] = useState<string | null>(null);
+  const run = useRun();
   const valid = rows?.filter((r) => r.errors.length === 0) ?? [];
 
   const onFile = async (f: File | undefined) => {
@@ -193,7 +212,7 @@ export function ImportExportSection() {
                 </tbody>
               </table>
             </div>
-            <Button disabled={valid.length === 0} onClick={() => { queueActions.addMany(valid.map((r) => r.data)); toast.success(`Imported ${valid.length} orders`); setRows(null); }}>
+            <Button disabled={valid.length === 0} onClick={async () => { if (await run(() => queueActions.addMany(valid.map((r) => r.data)), `Imported ${valid.length} orders`)) setRows(null); }}>
               Import {valid.length} valid row{valid.length === 1 ? "" : "s"}
             </Button>
           </>
@@ -223,11 +242,6 @@ export function SettingsSection() {
           <Input readOnly value={overlayUrl} />
           <Button variant="outline" onClick={() => { void navigator.clipboard.writeText(overlayUrl); toast.success("Copied"); }}>Copy</Button>
         </div>
-      </div>
-      <div className="glass space-y-3 rounded-md p-6">
-        <h3 className="font-display text-2xl">Demo data</h3>
-        <p className="text-sm text-muted-foreground">This prototype keeps orders in this browser only. Restore the sample orders at any time.</p>
-        <Confirm trigger={<Button variant="outline">Reset sample data</Button>} title="Reset demo data?" description="All changes made in this browser are replaced by the sample orders." action="Reset" onConfirm={() => { queueActions.resetDemo(); toast.success("Sample data restored"); }} />
       </div>
     </div>
   );

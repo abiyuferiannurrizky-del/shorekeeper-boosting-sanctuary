@@ -33,7 +33,7 @@ function QueuePage() {
         aside={
           <div className="space-y-1 text-right text-xs text-muted-foreground">
             <p className="inline-flex items-center gap-2 uppercase tracking-[0.2em] text-glow">
-              <span className="animate-pulse-dot h-2 w-2 rounded-full bg-glow" /> Connected · Demo data
+              <span className="animate-pulse-dot h-2 w-2 rounded-full bg-glow" /> Live
             </p>
             <p>Last updated {updated ? new Date(updated).toLocaleTimeString() : "—"}</p>
           </div>
