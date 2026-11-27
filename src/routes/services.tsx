@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Clock } from "lucide-react";
 import { PageHero, PageShell } from "@/components/site/PageShell";
 import { DISCORD_URL } from "@/components/site/links";
-import { SERVICE_CATEGORIES } from "@/lib/services";
+import { SERVICE_CATEGORIES, groupByCategory } from "@/lib/services";
+import { usePriceList } from "@/lib/services-store";
 
 export const Route = createFileRoute("/services")({
   head: () => ({
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/services")({
 });
 
 function ServicesPage() {
+  const prices = usePriceList();
   return (
     <PageShell>
       <PageHero eyebrow="Catalogue" title="SERVICES" subtitle="Choose your path. Every order is tracked live from the moment it enters the queue." />
@@ -38,9 +40,31 @@ function ServicesPage() {
             </div>
           </section>
         ))}
+        <section>
+          <h2 className="font-display text-4xl text-silver">Price List</h2>
+          <p className="mt-2 text-muted-foreground">Wuthering Waves rates.</p>
+          <div className="mt-8 grid gap-6 lg:grid-cols-2">
+            {groupByCategory(prices).map(([cat, items]) => (
+              <div key={cat} className="glass rounded-md p-6">
+                <h3 className="font-display text-2xl text-silver">{cat}</h3>
+                <ul className="mt-4 divide-y divide-border/60">
+                  {items.map((i) => (
+                    <li key={i.name} className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 py-3">
+                      <div className="min-w-0">
+                        <p className="text-sm text-silver">{i.name}</p>
+                        {i.detail && <p className="mt-0.5 text-xs text-muted-foreground">{i.detail}</p>}
+                      </div>
+                      <p className="shrink-0 text-right text-sm font-semibold text-primary">{i.price || "Ask on Discord"}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
         <div className="glass rounded-md p-8 text-center">
           <p className="font-display text-3xl text-silver">Ready to begin?</p>
-          <p className="mt-2 text-muted-foreground">Orders and pricing are handled on our Discord.</p>
+          <p className="mt-2 text-muted-foreground">Orders are handled on our Discord.</p>
           <a href={DISCORD_URL} target="_blank" rel="noreferrer" className="mt-6 inline-flex rounded-sm border border-primary bg-primary px-6 py-3 text-xs font-bold uppercase tracking-[0.25em] text-primary-foreground">Order on Discord</a>
         </div>
       </div>

@@ -38,3 +38,4 @@ use the editor.
 - Discord bot tokens and admin writes stay server-side only. Why: security requirement.
 
 - Admin sign-in uses username + password; usernames map to `<name>@admin.bongjoki.local` in AdminGate. Why: auth requires an email; requires email auto-confirm on the backend.
+- Service prices live in the `services` table (public read, admin write; SQL in `db/policies/service_prices.sql`); `usePriceList` falls back to `DEFAULT_PRICE_LIST` in `src/lib/services.ts`. Why: page shows prices even before the table exists.

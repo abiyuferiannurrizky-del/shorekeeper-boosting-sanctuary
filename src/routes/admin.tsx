@@ -1,7 +1,8 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { FileSpreadsheet, History, LayoutDashboard, ListOrdered, LogOut, Settings } from "lucide-react";
+import { FileSpreadsheet, Tag, History, LayoutDashboard, ListOrdered, LogOut, Settings } from "lucide-react";
 import { Logo } from "@/components/brand/Butterfly";
 import { AdminGate } from "@/components/admin/AdminGate";
+import { ServicesSection } from "@/components/admin/ServicesSection";
 import { Button } from "@/components/ui/button";
 import { HistorySection, ImportExportSection, OverviewSection, QueueSection, SettingsSection } from "@/components/admin/sections";
 import {
@@ -12,6 +13,7 @@ import {
 const SECTIONS = {
   overview: { label: "Overview", icon: LayoutDashboard, el: OverviewSection },
   queue: { label: "Queue Management", icon: ListOrdered, el: QueueSection },
+  services: { label: "Services & Pricing", icon: Tag, el: ServicesSection },
   history: { label: "Order History", icon: History, el: HistorySection },
   data: { label: "Import / Export", icon: FileSpreadsheet, el: ImportExportSection },
   settings: { label: "Settings", icon: Settings, el: SettingsSection },
