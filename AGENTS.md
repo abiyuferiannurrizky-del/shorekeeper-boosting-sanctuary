@@ -28,3 +28,9 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+- Queue data goes through `src/lib/queue/store.ts` (`useQueue`, `queueActions`); swap its internals for the database later, keep the API. Why: pages, admin and overlay share one source.
+- Queue rules (sorting, stats, numbering, import validation) live in pure functions in `src/lib/queue/logic.ts` / `csv.ts` with tests in `src/test/`. Why: reusable server-side for the Discord bot.
+- `/overlay` uses its own stylesheet (`src/components/overlay/overlay.css`, `--ov-*` vars) and `html.overlay-mode` for a transparent page. Why: OBS browser source must not inherit site styling.
+- Discord bot tokens and admin writes stay server-side only. Why: security requirement.
