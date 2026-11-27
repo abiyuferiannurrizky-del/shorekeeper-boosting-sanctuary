@@ -36,3 +36,5 @@ use the editor.
 - Queue rules (sorting, stats, numbering, import validation) live in pure functions in `src/lib/queue/logic.ts` / `csv.ts` with tests in `src/test/`. Why: reusable server-side for the Discord bot.
 - `/overlay` uses its own stylesheet (`src/components/overlay/overlay.css`, `--ov-*` vars) and `html.overlay-mode` for a transparent page. Why: OBS browser source must not inherit site styling.
 - Discord bot tokens and admin writes stay server-side only. Why: security requirement.
+
+- Admin sign-in uses username + password; usernames map to `<name>@admin.bongjoki.local` in AdminGate. Why: auth requires an email; requires email auto-confirm on the backend.

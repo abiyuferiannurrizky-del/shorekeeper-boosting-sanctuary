@@ -9,6 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 
+const USER_DOMAIN = "admin.bongjoki.local";
+/** Usernames map to a fixed internal address because the sign-in system needs one. */
+export const usernameToEmail = (u: string) => `${u.trim().toLowerCase()}@${USER_DOMAIN}`;
+export const emailToUsername = (e: string) => e.endsWith(`@${USER_DOMAIN}`) ? e.slice(0, -USER_DOMAIN.length - 1) : e;
+
 type Access = "loading" | "signed-out" | "no-access" | "admin";
 
 function Frame({ children }: { children: ReactNode }) {
@@ -25,25 +30,27 @@ function Frame({ children }: { children: ReactNode }) {
 
 function SignIn() {
   const [mode, setMode] = useState<"in" | "up">("in");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!/^[a-zA-Z0-9_.-]{3,32}$/.test(username.trim())) return setMsg("Username must be 3–32 letters, numbers, dots, dashes or underscores.");
     setBusy(true); setMsg(null);
+    const email = usernameToEmail(username);
     const res = mode === "in"
       ? await supabase.auth.signInWithPassword({ email, password })
-      : await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/admin` } });
+      : await supabase.auth.signUp({ email, password });
     setBusy(false);
-    if (res.error) return setMsg(res.error.message);
-    if (mode === "up" && !res.data.session) setMsg("Check your email to confirm your account, then sign in.");
+    if (res.error) return setMsg(mode === "in" && res.error.message.includes("Invalid") ? "Wrong username or password." : res.error.message);
+    if (mode === "up" && !res.data.session) setMsg("Account created, but it still needs to be confirmed before you can sign in.");
   };
   return (
     <Frame>
       <form onSubmit={submit} className="space-y-4">
-        <div className="space-y-1.5"><Label htmlFor="email">Email</Label><Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+        <div className="space-y-1.5"><Label htmlFor="username">Username</Label><Input id="username" autoComplete="username" required value={username} onChange={(e) => setUsername(e.target.value)} /></div>
         <div className="space-y-1.5"><Label htmlFor="password">Password</Label><Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} /></div>
         {msg && <p className="text-sm text-muted-foreground">{msg}</p>}
         <Button type="submit" className="w-full" disabled={busy}>{mode === "in" ? "Sign in" : "Create account"}</Button>
@@ -68,7 +75,7 @@ function NoAccess({ session, onClaimed }: { session: Session; onClaimed: () => v
   };
   return (
     <Frame>
-      <p className="text-center text-sm text-muted-foreground">Signed in as <span className="text-silver">{session.user.email}</span></p>
+      <p className="text-center text-sm text-muted-foreground">Signed in as <span className="text-silver">{emailToUsername(session.user.email ?? "")}</span></p>
       {canClaim ? (
         <>
           <p className="text-center text-sm">No administrator has been set up yet. Claim the admin role for this account?</p>
@@ -109,5 +116,5 @@ export function AdminGate({ children }: { children: (signOut: () => void, email:
   if (access === "loading") return <Frame><p className="text-center text-sm text-muted-foreground">Checking access…</p></Frame>;
   if (access === "signed-out" || !session) return <SignIn />;
   if (access === "no-access") return <NoAccess session={session} onClaimed={() => setTick((t) => t + 1)} />;
-  return <>{children(() => void supabase.auth.signOut(), session.user.email ?? "")}</>;
+  return <>{children(() => void supabase.auth.signOut(), emailToUsername(session.user.email ?? ""))}</>;
 }
