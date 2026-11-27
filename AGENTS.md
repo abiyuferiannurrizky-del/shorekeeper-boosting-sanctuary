@@ -31,7 +31,7 @@ use the editor.
 
 ## Project rules
 - Queue data goes through `src/lib/queue/store.ts` (`useQueue`, `queueActions`, one realtime subscription in __root). Why: pages, admin and overlay share one source.
-- Public views read `queue_public` (RLS: active orders + done within 30 days) (trigger-synced mirror without discord_id/notes); admin reads/writes `queue_entries`, RLS allows admins only. Why: never expose private fields publicly, realtime only on the safe table.
+- Public views read `queue_public` (RLS: active orders + every finished order, no time window) (trigger-synced mirror without discord_id/notes); admin reads/writes `queue_entries`, RLS allows admins only. Why: never expose private fields publicly, realtime only on the safe table.
 - Admin role lives in `user_roles`; first signed-in user can claim it via `claim_first_admin()` while no admin exists. Why: bootstrap without hand-editing data.
 - Queue rules (sorting, stats, numbering, import validation) live in pure functions in `src/lib/queue/logic.ts` / `csv.ts` with tests in `src/test/`. Why: reusable server-side for the Discord bot.
 - `/overlay` uses its own stylesheet (`src/components/overlay/overlay.css`, `--ov-*` vars) and `html.overlay-mode` for a transparent page. Why: OBS browser source must not inherit site styling.

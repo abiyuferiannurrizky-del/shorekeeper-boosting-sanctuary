@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeQueue, nextQueueNumber } from "@/lib/queue/logic";
+import { activeQueue, completedOrders, nextQueueNumber } from "@/lib/queue/logic";
 import { parseCsv, validateImport } from "@/lib/queue/csv";
 import type { QueueEntry } from "@/lib/queue/types";
 
@@ -17,6 +17,12 @@ describe("queue rules", () => {
   });
   it("assigns the next queue number", () => {
     expect(nextQueueNumber(SAMPLE_QUEUE)).toBe(11);
+  });
+  it("lists finished orders of any age, newest first", () => {
+    const old: QueueEntry = { ...mk(5, "done"), completed_at: "2024-03-01T00:00:00Z" };
+    const recent: QueueEntry = { ...mk(6, "done"), completed_at: new Date().toISOString() };
+    const done = completedOrders([mk(7, "waiting"), old, recent]);
+    expect(done.map((e) => e.id)).toEqual(["6", "5"]);
   });
   it("flags missing fields and duplicates on import", () => {
     const t = parseCsv(
