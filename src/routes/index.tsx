@@ -6,13 +6,14 @@ import { QueueTable } from "@/components/queue/QueueTable";
 import { PageShell } from "@/components/site/PageShell";
 import { activeQueue } from "@/lib/queue/logic";
 import { useQueue } from "@/lib/queue/store";
-import { SERVICE_CATEGORIES } from "@/lib/services";
+import { CATEGORY_INFO, groupByCategory, startingPrice } from "@/lib/services";
+import { usePriceList } from "@/lib/services-store";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "BONGJOKI — Premium Gaming Boosting Service" },
-      { name: "description", content: "Your journey, our resonance. Premium boosting for Mobile Legends and more, with a live public queue." },
+      { name: "description", content: "Your journey, our resonance. Premium Wuthering Waves boosting with a live public queue." },
       { property: "og:title", content: "BONGJOKI — Premium Gaming Boosting Service" },
       { property: "og:description", content: "Your journey, our resonance. Premium boosting with a live public queue." },
       { property: "og:type", content: "website" },
@@ -26,6 +27,7 @@ const btnPrimary = "inline-flex items-center gap-2 rounded-sm border border-prim
 const btnGhost = "inline-flex items-center gap-2 rounded-sm border border-silver/30 px-6 py-3 text-xs font-bold uppercase tracking-[0.25em] text-silver transition hover:border-primary hover:text-primary";
 
 function Home() {
+  const prices = usePriceList();
   const preview = activeQueue(useQueue()).slice(0, 3);
   return (
     <PageShell>
@@ -56,19 +58,20 @@ function Home() {
 
       <section className="mx-auto max-w-7xl px-5 py-20">
         <OrnamentDivider label="Services" />
-        <div className="mt-12 grid gap-6 md:grid-cols-2">
-          {SERVICE_CATEGORIES.map((c, i) => {
-            const Icon = i === 0 ? Swords : Gamepad2;
+        <p className="mx-auto mt-6 max-w-xl text-center text-sm text-muted-foreground">Wuthering Waves only — every pilot knows Solaris inside out.</p>
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {groupByCategory(prices).map(([cat, items], i) => {
+            const Icon = [Swords, Gamepad2, Swords, Gamepad2][i % 4]!;
             return (
-              <Link key={c.id} to="/services" className="glass group relative overflow-hidden rounded-md p-8 transition hover:border-primary/50 hover:shadow-[var(--shadow-glow)]">
+              <Link key={cat} to="/services" className="glass group relative overflow-hidden rounded-md p-7 transition hover:border-primary/50 hover:shadow-[var(--shadow-glow)]">
                 <Icon className="h-6 w-6 text-primary" />
-                <h3 className="mt-6 font-display text-3xl text-silver">{c.game}</h3>
-                <p className="mt-2 max-w-sm text-sm text-muted-foreground">{c.tagline}</p>
-                <p className="mt-6 inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-primary">
-                  {c.items.length} services <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-1" />
+                <h3 className="mt-6 font-display text-3xl text-silver">{cat}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{CATEGORY_INFO[cat] ?? ""}</p>
+                <p className="mt-6 text-xs uppercase tracking-[0.25em] text-muted-foreground">From <span className="text-primary">{startingPrice(items)}</span></p>
+                <p className="mt-2 inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-primary">
+                  {items.length} services <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-1" />
                 </p>
                 <span className="absolute -right-10 -top-10 h-40 w-40 rounded-full border border-primary/20 transition group-hover:scale-110" />
-                <span className="absolute -right-4 -top-4 h-24 w-24 rounded-full border border-primary/10" />
               </Link>
             );
           })}

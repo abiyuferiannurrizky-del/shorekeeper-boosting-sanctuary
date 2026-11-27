@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { NewQueueEntry } from "@/lib/queue/types";
 
-const EMPTY: NewQueueEntry = { customer_name: "", discord_username: "", discord_id: "", game: "Mobile Legends", service: "", notes: "" };
+const EMPTY: NewQueueEntry = { customer_name: "", discord_username: "", discord_id: "", game: "Wuthering Waves", service: "", notes: "" };
 
 export function QueueFormDialog({ open, onOpenChange, initial, onSubmit, title }: {
   open: boolean; onOpenChange: (o: boolean) => void; initial?: NewQueueEntry; title: string; onSubmit: (v: NewQueueEntry) => void | Promise<void>;
